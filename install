@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+
+[ "$DOTFILES_PATH" ] || export DOTFILES_PATH="$(cd $(dirname "$0"); pwd)"
+
+# Install Homebrew.
+type -t brew > /dev/null || /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+# Install 'op' (1Password CLI) and jq to parse results.
+type -t op > /dev/null || brew cask install 1password-cli
+type -t jq > /dev/null || brew install jq
+
+export OP_ACCOUNT="$(echo 'YnJpcy1wYXJrZXJzCg==' | base64 --decode)"
+export OP_EMAIL="$(echo 'cGFya2VydHIyQGdtYWlsLmNvbQo=' | base64 --decode)"
+
+while ! op list vaults --account=${OP_ACCOUNT} > /dev/null; do
+    eval $(op signin "${OP_ACCOUNT//_/-}.1password.com" "$OP_EMAIL")
+done
+
+### END OF INTERACTIVE USAGE ###################################################
+
+for FILE in "$DOTFILES_PATH/install.d/"*.bash; do
+    echo ">>> sourcing $FILE"
+    source "$FILE"
+done
+
+killall \
+    "Address Book" \
+    "Calendar" \
+    "ControlStrip" \
+    "cfprefsd" \
+    "Contacts" \
+    "Dock" \
+    "Finder" \
+    "iCal" \
+    "iTunes" \
+    "Mail" \
+    "Safari" \
+    "Spotlight" \
+    "SystemUIServer"
